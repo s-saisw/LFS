@@ -4,34 +4,26 @@
 
 #What this script does:
 # 1 select only necessary variables for LFS basic analysis
-# 2 recompute dailywage to use in the basic analysis
-# 3 drop samples with no wage data available 
-#   (i.e. employer, people helping family business)
+# 2 rename those variables for merging
 
-#compute daily wage (draft)
-#If WAGE_TYPE=1, use AMOUMT*8. 
-#If WAGE_TYPE=2, use AMOUMT.
-#If WAGE_TYPE=3, use AMOUMT/7.
-#If WAGE_TYPE ==4, use APPROX/30. 
-#If WAGE_TYPE=5|6, use NA.
-#If WAGE_TYPE=7, use 0.
-
-install.packages("dplyr")
 library(dplyr)
 
-file = list.files(path = "T:/Thesis_Data/LFS_clean/LFS_clean/",
+file = list.files(path = "/Data/LFS/",
                   "_selected.csv",
                   full.names = TRUE) #This is LFS by year
 
-#get col names ##################################
+#get col names ###################################################################
+
 collist = list()
 
 for (i in 1:length(file)) {
+  message = paste0("Reading file no. ", i, ". Don't panic. It's coming along")
+  print(message)
   temp = read.csv(file[i], row.names = 1)
   collist[[i]] = colnames(temp)
 }
 
-# check variable names ##########################
+# check variable names to see if they are consistent across years ################
 
 checkvar = function(v){
   for (i in 1:length(collist)) {
@@ -92,9 +84,6 @@ for (i in c(4,5,8,9)) {
   write.csv(newdata, file = outputname)
 }
 
-?gctorture
-gctorture(on=FALSE)
-
 #2006-2007
 for (i in 6:7) {
   data = read.csv(file[i], row.names = 1)
@@ -147,9 +136,26 @@ for (i in c(10,11,12, 14, 15, 16, 17, 18)) {
 }
 
 # write function
+# LFSana = function(path){
+#   input = read.csv(path, row.names = 1)
+#   data = select(input, 
+#                 year, quarter, CWT,
+#                 SEX, AGE,
+#                 STATUS,
+#                 INDUS,
+#                 RE_ED,
+#                 WAGE_TYPE, AMOUNT, APPROX
+#   )
+#   outputname = paste0("LFS_", year, "_ana.csv")
+#   write.csv(data_out, file = outputname)
+# }
 
-LFSana = function(path){
-  input = read.csv(path, row.names = 1)
+domain = list.files(path = "/Data/LFS/LFS_correctvar",
+                             pattern = "_correctvar.csv",
+                             full.names = TRUE)
+
+for (i in 1:length(domain)) {
+  input = read.csv(domain[i], row.names = 1)
   data = select(input, 
                 year, quarter, CWT,
                 SEX, AGE,
@@ -158,26 +164,7 @@ LFSana = function(path){
                 RE_ED,
                 WAGE_TYPE, AMOUNT, APPROX
   )
-  data$dailywage = ifelse(data$WAGE_TYPE == 1, data$AMOUNT * 8, 
-                          ifelse(data$WAGE_TYPE == 2, data$AMOUNT,
-                                 ifelse(data$WAGE_TYPE == 3, data$AMOUNT / 7,
-                                        ifelse(data$WAGE_TYPE == 4, data$APPROX /30,
-                                               ifelse(data$WAGE_TYPE == 7, 0, NA)
-                                        )
-                                 )
-                          )
-  )
-  data_out = select(data[!is.na(data$dailywage),],
-                    -c(AMOUNT, APPROX))
-  year = data_out$year[1]
+  year = data$year[1] #Create new year variable for file naming in the next line
   outputname = paste0("LFS_", year, "_ana.csv")
-  write.csv(data_out, file = outputname)
-}
-
-file_correctvar = list.files(path = "T:/Thesis_Data/LFS_analysis",
-                             pattern = "_correctvar.csv",
-                             full.names = TRUE)
-
-for (i in 1:length(file_correctvar)) {
-  LFSana(file_correctvar[i])
+  write.csv(data, file = outputname)
 }
