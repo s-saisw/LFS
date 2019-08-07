@@ -3,7 +3,7 @@ codes for cleaning Labor Force Survey
 
 ## WORKFLOW
 - Rename .sav files and convert to .csv (Original file names contain space)
-- Rename columns to make it consistent within a year (Column names are mostly consistent within a year) *Codes here can be automated*
+- Rename columns to make it consistent within a year (Column names are mostly consistent within a year) *Codes here can be improved with for loops and automated*
 - Merge quarterly data to year data 
 - Rename columns by year *Codes here can be automated*
 - Select only necessary variables (To reduce the workload of stata)
