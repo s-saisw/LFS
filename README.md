@@ -19,4 +19,4 @@ codes for cleaning Labor Force Survey
 - LFS_outputdta.R : *Codes here can be automated*
 
 ## ISSUES
-- No month data for LFS 2003
+- No month data for LFS 2003q1 but this is negligible (for now) since there is no policy change during 2003q1
