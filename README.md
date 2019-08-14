@@ -15,7 +15,7 @@ codes for cleaning Labor Force Survey
 - LFS_cleanscript.R : add year and quarter column, remove space in .sav file names
 - colname.R : rename columns of quarterly data and merge by year *Codes here can be improved with for loops and automated*
 - filterage.R : remove individuals under 15 since they are not asked about occupation
-- selectvar.R : delete variables after 'quarter'
+- selectvar.R : delete variables after 'quarter' or 'MONTH' (in thecase of year 2003)
 - LFS_outputdta.R : *Codes here can be automated*
 
 ## ISSUES
