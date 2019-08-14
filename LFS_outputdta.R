@@ -1,6 +1,6 @@
 #=================================================================================
 # This program selects only necessary variables for stata and renames for merge
-# last update - 8/8/2019
+# last update - 8/14/2019
 # input       - _selected.csv annual data 2001-2018
 # output      - _ana.csv annual data 2001-2018
 # WORKFLOW    - get column names and store in a list
@@ -12,6 +12,7 @@
 library(dplyr)
 library(haven)
 
+rm(list = ls(all.names = TRUE))
 setwd("/Data/LFS")
 
 # =============================================================================
@@ -25,9 +26,9 @@ collist = list()
 for (i in 1:length(file)) {
   temp = read.csv(file[i], row.names = 1)
   collist[[i]] = colnames(temp)
-  message = paste0("Successfully processed data no. ", i)
+  message = paste0("Obtained colname of data no. ", i)
   print(message)
-  rm(temp, message)
+  rm(temp, message, i)
 }
 
 # =============================================================================
@@ -103,19 +104,7 @@ for (i in 1: length(file)){
   rm(data)
   msg1 = paste0("Successfully renamed data no.", i)
   print(msg1)
-  if (i==3){
-    output = select(newdata, #skip 'MONTH' for year 2003
-                  year, quarter, CWT, 
-                  SEX, AGE, 
-                  STATUS,
-                  INDUS, SIZE_, 
-                  RE_ED,
-                  WAGE_TYPE, AMOUNT, APPROX
-    )
-    output$MONTH = NA   
-  }
-  else{
-    output = select(newdata, 
+  output = select(newdata, 
                   year, quarter, CWT,
                   MONTH,
                   SEX, AGE,
@@ -123,8 +112,7 @@ for (i in 1: length(file)){
                   INDUS, SIZE_,
                   RE_ED,
                   WAGE_TYPE, AMOUNT, APPROX
-    )
-  }
+                  )
   year = output$year[1]
   outputname = paste0("LFS_",year, "_ana.csv")
   write.csv(output, file = outputname)
@@ -132,6 +120,7 @@ for (i in 1: length(file)){
   print(msg2)
   rm(newdata, output, outputname, msg1, msg2, i, year)
 }
+
 
 rm(collist, varneed, file)
 # ==============================================================================
@@ -148,7 +137,3 @@ write_dta(LFS_all_ana,
           path = "/Data/LFS/LFS_all.dta")
 
 rm(allLFS_ana, file_ana)
-
-temp = distinct(LFS_all_ana, year, quarter, .keep_all = TRUE)
-# only y2003q1 has missing value for `MONTH'`
-rm(temp)
