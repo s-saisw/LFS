@@ -1,6 +1,6 @@
 #=================================================================================
 # This program selects only necessary variables for stata and renames for merge
-# last update - 8/14/2019
+# last update - 8/22/2019
 # input       - _selected.csv annual data 2001-2018
 # output      - _ana.csv annual data 2001-2018
 # WORKFLOW    - get column names and store in a list
@@ -109,9 +109,10 @@ for (i in 1: length(file)){
                   MONTH,
                   SEX, AGE,
                   STATUS,
-                  INDUS, SIZE_,
+                  INDUS, SIZE_, OCCUP,
                   RE_ED,
-                  WAGE_TYPE, AMOUNT, APPROX
+                  WAGE_TYPE, AMOUNT, APPROX,
+                  RE_WK
                   )
   year = output$year[1]
   outputname = paste0("LFS_",year, "_ana.csv")
@@ -120,7 +121,6 @@ for (i in 1: length(file)){
   print(msg2)
   rm(newdata, output, outputname, msg1, msg2, i, year)
 }
-
 
 rm(collist, varneed, file)
 # ==============================================================================
