@@ -1,6 +1,6 @@
 #=================================================================================
 # This program selects only necessary variables for stata and renames for merge
-# last update - 8/22/2019
+# last update - 10/2/2019
 # input       - _selected.csv annual data 2001-2018
 # output      - _ana.csv annual data 2001-2018
 # WORKFLOW    - get column names and store in a list
@@ -48,7 +48,9 @@ varneed = list("year", "quarter", "CWT", "MONTH",
                "STATUS", "INDUS", "SIZE_", "OCCUP",
                "RE_ED",
                "WAGE_TYPE", "AMOUNT", "APPROX",
-               "RE_WK")
+               "RE_WK",
+               "MAIN_HR", "OTHER_HR", "TOTAL_HR",
+               "BONUS", "OT", "OTH_MONEY")
 
 for (i in 1: length(varneed)) {
   checkvar(varneed[[i]])
@@ -57,7 +59,6 @@ for (i in 1: length(varneed)) {
 # [1] "Change variable to CWT for year 2001"
 # [1] "Change variable to CWT for year 2002"
 # [1] "Change variable to CWT for year 2003"
-# [1] "Change variable to MONTH for year 2003"
 # [1] "Change variable to STATUS for year 2013"
 # [1] "Change variable to INDUS for year 2013"
 # [1] "Change variable to SIZE_ for year 2013"
@@ -72,8 +73,12 @@ for (i in 1: length(varneed)) {
 # [1] "Change variable to AMOUNT for year 2009"
 # [1] "Change variable to RE_WK for year 2006"
 # [1] "Change variable to RE_WK for year 2007"
+# [1] "Change variable to MAIN_HR for year 2013"
+# [1] "Change variable to OTHER_HR for year 2013"
+# [1] "Change variable to TOTAL_HR for year 2013"
 
 # =============================================================================
+collist[13]
 
 for (i in 1: length(file)){
   data = read.csv(file[i], row.names = 1)
@@ -97,7 +102,10 @@ for (i in 1: length(file)){
     newdata = rename(data,
                      STATUS = status,
                      INDUS = indus,
-                     SIZE_ = size)
+                     SIZE_ = size,
+                     MAIN_HR = main_hr,
+                     OTHER_HR = other_hr,
+                     TOTAL_HR = total_hr)
   } else {
     newdata = data
   }
@@ -105,14 +113,14 @@ for (i in 1: length(file)){
   msg1 = paste0("Successfully renamed data no.", i)
   print(msg1)
   output = select(newdata, 
-                  year, quarter, CWT,
-                  MONTH,
+                  year, quarter, CWT, MONTH,
                   SEX, AGE,
-                  STATUS,
-                  INDUS, SIZE_, OCCUP,
+                  STATUS, INDUS, SIZE_, OCCUP,
                   RE_ED,
                   WAGE_TYPE, AMOUNT, APPROX,
-                  RE_WK
+                  RE_WK,
+                  MAIN_HR, OTHER_HR, TOTAL_HR,
+                  BONUS, OT, OTH_MONEY
                   )
   year = output$year[1]
   outputname = paste0("LFS_",year, "_ana.csv")
