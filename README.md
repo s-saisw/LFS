@@ -7,7 +7,7 @@ codes for cleaning Labor Force Survey
 - Merge quarterly data to year data **colname.R**
 - Filter individuals under 15 out (To reduce RAM's load) **filterage.R**
 - Delete variables that NSO mistakenly supplied (To reduce RAM's load) **selectvar.R**
-- Rename columns by year **LFS_outputdta.R**
+- Make column names consistent across years **LFS_outputdta.R**
 - Select only necessary variables (To reduce the workload of stata) **LFS_outputdta.R**
 - Merge year data from 2001-2018 and output as .dta **LFS_outputdta.R**
 
