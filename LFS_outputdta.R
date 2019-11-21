@@ -1,6 +1,6 @@
 #=================================================================================
 # This program selects only necessary variables for stata and renames for merge
-# last update - 10/2/2019
+# last update - 11/21/2019
 # input       - _selected.csv annual data 2001-2018
 # output      - _ana.csv annual data 2001-2018
 # WORKFLOW    - get column names and store in a list
@@ -31,6 +31,8 @@ for (i in 1:length(file)) {
   rm(temp, message, i)
 }
 
+collist[2]
+
 # =============================================================================
 
 checkvar = function(v){
@@ -44,7 +46,7 @@ checkvar = function(v){
 }
 
 varneed = list("year", "quarter", "CWT", "MONTH",
-               "SEX", "AGE",
+               "SEX", "AGE", "MARITAL",
                "STATUS", "INDUS", "SIZE_", "OCCUP",
                "RE_ED",
                "WAGE_TYPE", "AMOUNT", "APPROX",
@@ -78,7 +80,6 @@ for (i in 1: length(varneed)) {
 # [1] "Change variable to TOTAL_HR for year 2013"
 
 # =============================================================================
-collist[13]
 
 for (i in 1: length(file)){
   data = read.csv(file[i], row.names = 1)
@@ -114,7 +115,7 @@ for (i in 1: length(file)){
   print(msg1)
   output = select(newdata, 
                   year, quarter, CWT, MONTH,
-                  SEX, AGE,
+                  SEX, AGE, MARITAL,
                   STATUS, INDUS, SIZE_, OCCUP,
                   RE_ED,
                   WAGE_TYPE, AMOUNT, APPROX,
