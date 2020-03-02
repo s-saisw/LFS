@@ -11,27 +11,26 @@
 
 library(dplyr)
 library(haven)
+library(tidyverse)
 
 rm(list = ls(all.names = TRUE))
-setwd("/Data/LFS")
+setwd("T:/Data/LFS")
 
 # =============================================================================
 
-file = list.files(path = "/Data/LFS/",
+file <- list.files(path = "/Data/LFS/",
                   "_selected.csv",
                   full.names = TRUE) #This is LFS by year
 
-collist = list()
+collist <- list()
 
 for (i in 1:length(file)) {
-  temp = read.csv(file[i], row.names = 1)
-  collist[[i]] = colnames(temp)
-  message = paste0("Obtained colname of data no. ", i)
+  temp <- read.csv(file[i], row.names = 1)
+  collist[[i]] <- colnames(temp)
+  message <- paste0("Obtained colname of data no. ", i)
   print(message)
   rm(temp, message, i)
 }
-
-collist[2]
 
 # =============================================================================
 
@@ -132,10 +131,120 @@ for (i in 1: length(file)){
 }
 
 rm(collist, varneed, file)
+
+# recode industry ==============================================================
+
+concordance <- read_excel("LFS_concordance.xlsx") #1389 obs
+
+ISIC <- concordance[,2] %>%
+  as.matrix() %>%
+  as.numeric()
+TSIC <- concordance[,4] %>%
+  as.matrix() %>%
+  as.numeric()
+LFS11 <- concordance[,5] %>%
+  as.matrix() %>%
+  substring(1, 4) %>%
+  as.numeric()
+
+newCat <- concordance[,8]
+
+ISIC_match <- cbind(ISIC, newCat) %>%
+  na.omit() %>%
+  distinct() %>%
+  rename(industry = newCategory) #295 unique codes
+
+TSIC_match <- cbind(TSIC, newCat) %>%
+  na.omit() %>%
+  distinct() %>%
+  rename(industry = newCategory) #1077 unique codes
+
+LFS11_match <- cbind(LFS11, newCat) %>%
+  na.omit %>%
+  distinct() %>%
+  rename(industry = newCategory) #439 unique codes
+
+# check if there is one to many match
+ISIC_match$dup <- duplicated(ISIC_match$ISIC)
+TSIC_match$dup <- duplicated(TSIC_match$TSIC)
+LFS11_match$dup <- duplicated(LFS11_match$LFS11)
+
+ISIC_match[ISIC_match$dup == TRUE,]
+TSIC_match[TSIC_match$dup == TRUE,]
+LFS11_match[LFS11_match$dup == TRUE,]
+
+# recode 2001-2010, 2012-2018
+
+for (year in 2001:2010) {
+  input <- paste0("LFS_", year, "_ana.csv")
+  data <- read.csv(input, header = TRUE)
+  data_indusRecode <- merge(data, ISIC_match,
+                            by.x = "INDUS", by.y = "ISIC",
+                            all.x = TRUE, all.y = FALSE)
+  if (nrow(data) == nrow(data_indusRecode)) {
+    outputname <- paste0("LFS_",year, "_indusRecode.csv")
+    write.csv(data_indusRecode, file = outputname)
+    msg <- paste0("output year ", year)
+    print(msg)
+    
+  } else {
+    msg <- paste0("error for year ", year)
+    print(msg)
+  }
+  
+  if (year == 2010) {
+    rm(input, data, data_indusRecode, outputname, msg)
+  }
+}
+
+for (year in 2011:2011) {
+  input <- paste0("LFS_", year, "_ana.csv")
+  data <- read.csv(input, header = TRUE)
+  data_indusRecode <- merge(data, LFS11_match,
+                            by.x = "INDUS", by.y = "LFS11",
+                            all.x = TRUE, all.y = FALSE)
+  if (nrow(data) == nrow(data_indusRecode)) {
+    outputname <- paste0("LFS_",year, "_indusRecode.csv")
+    write.csv(data_indusRecode, file = outputname)
+    msg <- paste0("output year ", year)
+    print(msg)
+    
+  } else {
+    msg <- paste0("error for year ", year)
+    print(msg)
+  }
+  
+  if (year == 2011) {
+    rm(input, data, data_indusRecode, outputname, msg)
+  }
+}
+
+for (year in 2012:2018) {
+  input <- paste0("LFS_", year, "_ana.csv")
+  data <- read.csv(input, header = TRUE)
+  data_indusRecode <- merge(data, TSIC_match,
+                            by.x = "INDUS", by.y = "TSIC",
+                            all.x = TRUE, all.y = FALSE)
+  if (nrow(data) == nrow(data_indusRecode)) {
+    outputname <- paste0("LFS_",year, "_indusRecode.csv")
+    write.csv(data_indusRecode, file = outputname)
+    msg <- paste0("output year ", year)
+    print(msg)
+    
+  } else {
+    msg <- paste0("error for year ", year)
+    print(msg)
+  }
+  
+  if (year == 2018) {
+    rm(input, data, data_indusRecode, outputname, msg)
+  }
+}
+
 # ==============================================================================
 
 file_ana = list.files("/Data/LFS",
-                      pattern = "_ana.csv",
+                      pattern = "_indusRecode.csv",
                       full.names = TRUE)
 
 # This line may take some time to run
