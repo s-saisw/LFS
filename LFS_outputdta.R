@@ -1,6 +1,6 @@
 #=================================================================================
 # This program selects only necessary variables for stata and renames for merge
-# last update - 3/7/2020
+# last update - 3/9/2020
 # input       - _selected.csv annual data 2001-2018
 # output      - _ana.csv annual data 2001-2018
 # WORKFLOW    - get column names and store in a list
@@ -134,47 +134,43 @@ rm(collist, varneed, file)
 # recode industry ==============================================================
 
 library(readxl)
-concordance <- read_excel("LFS_concordance.xlsx") #1389 obs
+concordance <- read_excel("TSIC_to_ISIC_edited.xlsx") %>%
+  select(-c(oneDigit)) #1389 obs
 
-ISIC <- concordance[,2] %>%
-  as.matrix() %>%
-  as.numeric()
-TSIC <- concordance[,4] %>%
-  as.matrix() %>%
-  as.numeric()
-LFS11 <- concordance[,5] %>%
-  as.matrix() %>%
-  substring(1, 4) %>%
-  as.numeric()
+# concordance <- read_excel("LFS_concordance.xlsx") #1389 obs
 
-newCat <- concordance[,8]
-
-ISIC_match <- cbind(ISIC, newCat) %>%
+ISIC_match <- concordance %>%
+  select(c(ISIC, bigGroup)) %>%
   na.omit() %>%
   distinct() %>%
-  rename(industry = newCategory,
-         indus.original = ISIC) #295 unique codes
+  rename(indus.original = ISIC) %>%
+  mutate(indus.original = as.numeric(indus.original)) #296 unique correspondence
 
-TSIC_match <- cbind(TSIC, newCat) %>%
+LFS11_match <- concordance %>%
+  select(c(LFS11, bigGroup))  %>%
   na.omit() %>%
   distinct() %>%
-  rename(industry = newCategory,
-         indus.original = TSIC) #1082 unique codes
+  rename(indus.original = LFS11) %>%
+  mutate(indus.original = as.numeric(indus.original)) #441 unique correspondence
 
-LFS11_match <- cbind(LFS11, newCat) %>%
-  na.omit %>%
+TSIC_match <- concordance %>%
+  select(c(TSIC, bigGroup))  %>%
+  na.omit() %>%
   distinct() %>%
-  rename(industry = newCategory,
-         indus.original = LFS11) #440 unique codes
+  rename(indus.original = TSIC) %>%
+  mutate(indus.original = as.numeric(indus.original)) #1089 unique correspondence
 
 # check if there is one to many match
-ISIC_match$dup <- duplicated(ISIC_match$indus.original)
-TSIC_match$dup <- duplicated(TSIC_match$indus.original)
-LFS11_match$dup <- duplicated(LFS11_match$indus.original)
 
-ISIC_match[ISIC_match$dup == TRUE,]
-LFS11_match[LFS11_match$dup == TRUE,]
-TSIC_match[TSIC_match$dup == TRUE,]
+ISIC_match$dup <- duplicated(ISIC_match$indus.original)
+LFS11_match$dup <- duplicated(LFS11_match$indus.original)
+TSIC_match$dup <- duplicated(TSIC_match$indus.original)
+
+# errorRow <- concordance[concordance$dup == TRUE, ] #302 rows
+
+ISICerror <- ISIC_match[ISIC_match$dup == TRUE,] #0 errors
+LFS11error <- LFS11_match[LFS11_match$dup == TRUE,] #0 errors
+TSICerror <- TSIC_match[TSIC_match$dup == TRUE,] #0 errors
 
 matchList <- list(ISIC_match, LFS11_match, TSIC_match)
 
@@ -205,15 +201,24 @@ for (year in 2001:2018) {
   }
 }
 
+# sample ========
+sampleData <- read.csv("LFS_2001_indusRecode.csv", row.names = 1)
+errorData <- sampleData[which(is.na(sampleData$bigGroup) == TRUE & 
+                             is.na(sampleData$INDUS) == FALSE), ]
+
+table(errorData$INDUS)
+
 # ==============================================================================
 
-file_ana = list.files("/Data/LFS",
+file_recode = list.files("/Data/LFS",
                       pattern = "_indusRecode.csv",
                       full.names = TRUE)
 
 # This line may take some time to run
-LFS_all <- lapply(file_ana, read.csv, row.names=1) %>%
-  bind_rows()
+LFS_all <- lapply(file_recode, read.csv, row.names=1) %>%
+  bind_rows() %>%
+  rename(industry = bigGroup) %>%
+  select(-c(dup))
 
 # Find pattern in industry data that could not be matched
 errorData <- LFS_all[which(is.na(LFS_all$industry) == TRUE & 
@@ -221,24 +226,11 @@ errorData <- LFS_all[which(is.na(LFS_all$industry) == TRUE &
 
 
 table(errorData$INDUS)
-# 1599  3999  5299  8130  9304  9999 38221 47799 52214 58113 58122 58133 
-# 2     7    86   149     1  3061     1     1   125     7     1    13 
-# 58192 63990 64925 74101 74901 81300 96302 99999 
-# 25    35   355   959   191  1622   229  2273 
-
-# 1599  3999  5299  9304  9999 38221 47799 58113 58122 58133 58192 
-# 2     7    86     1  3061     1     1     7     1    13    25 
-# 63990 96302 99999 
-# 35   229  2273 
-
-# Issues
-# no description available: 1599, 3999, 5299, 47799
-# recode 9999, 99999 to NA
 
 # Find if there is any jump in industry at 2010-2011, 2011-2012
 
 jumpCheck <- function(x){
-  jumpData <- LFS_all_ana[LFS_all_ana$industry == x,3] %>%
+  jumpData <- LFS_all[LFS_all$industry == x,3] %>%
     table() %>%
     as.data.frame() %>%
     rename(year = ".")
@@ -247,24 +239,8 @@ jumpCheck <- function(x){
   return(p)
 }
 
-jumpCheck(1) #2011-2012
-jumpCheck(2) #ok
-jumpCheck(3)
-jumpCheck(4) #ok
-jumpCheck(5) #2011-2012
-jumpCheck(6) #2011-2012
-jumpCheck(7)
-jumpCheck(8) #2011-2012
-jumpCheck(9) #2010-2011
-jumpCheck(10) #2010-2011
-jumpCheck(11) #ok
-jumpCheck(12) #ok
-jumpCheck(13) #2010-2011
-jumpCheck(14)
-jumpCheck(15)
-jumpCheck(16) #ok
-jumpCheck(17) #ok #too small can be combined with 13
-jumpCheck(18) #ok
+oneDigit <- levels(LFS_all$industry)
+sapply(oneDigit, jumpCheck)
 
 # output data
 write_dta(LFS_all, 

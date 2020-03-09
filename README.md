@@ -19,35 +19,35 @@ codes for cleaning Labor Force Survey
 | 2011     | *ambiguous*      |   First 4 digits of TSIC 2009 |
 | 2012-2018 | TSIC 2009      |    |
 
-### Details on construction of the industry concordance
-- I matched the original codes to a foreign set of industry codes (See below)
-- Some correspondences are deleted to avoid one to many matches
+- First, I converted TSIC to ISIC using the [original concordance table](http://statstd.nso.go.th/classification/download.aspx) between ISIC Rev.3.0 and TSIC 2009.
+- Based on ISIC, I classified the occupations into 17 one-digit industry levels.
+- Next, I combined B (fishery) to A (agriculture), K (real estate) to F (construction) and Q (international organization) to L (public service)
 
-| Foreign code      | Description  |       
+#### Notes
+- 98100 and 98200 of TSIC are newly established and the official concordance table does not provide any match. Since they are classified in the one-digit level that is equivalent to P of ISIC, I also classified them as P. 
+- No description available: 1599, 3999, 5299, 9304, 47799. I recoded them as NA.
+- Some correspondences are deleted to avoid one to many matches. The edited concordance table is uploaded in this repository.
+
+| Industry     | Description  |       
 | -----------|-------------|
-|1	|เกษตรกรรม การป่าไม้ การประมง การล่าสัตว์|
-|2	|การทำเหมืองแร่และเหมืองหิน|
-|3	|การผลิต|
-|4	|การไฟฟ้า ก๊าซ ไอน้ำ การประปา ระบบปรับอากาศ การจัดหาน้ำ การจัดการ การบำบัดน้ำเสียและสิงปฏิกูล|
-|5	|การก่อสร้าง |
-|6	|การขายส่ง การขายปลีก การซ่อมแซมยานยนต์ จักรยานยนต์ ของใช้ส่วนบุคคล และของใช้ในครัวเรือน|
-|7	|การขนส่งและสถานที่เก็บสินค้า|
-|8	|ที่พักแรมและบริการด้านอาหาร|
-|9	|ข้อมูลข่าวสารและการสื่อสาร ศิลปะ ความบันเทิง และนันทนาการ การท่องเที่ยว|
-|10	|กิจกรรมทางการเงินและประกันภัย การดูแลทรัพย์สินทางปัญญา|
-|11	|กิจกรรมด้านอสังหาริมรัพย์ การให้เช่า|
-|12	|กิจกรรมทางวิชาชีพ วิทยาศาสตร์ และเทคนิค|
-|13	|การบริหารราชการและการป้องกันประเทศ|
-|14	|การศึกษา|
-|15	|กิจการด้านสุขภาพและงานสังคมสงเคราะห์|
-|16	|กิจกรรมการจ้างงานในครัวเรือนส่วนบุคคล กิจกรรมการผลิตสินค้าและบริการที่ทำขึ้นเองเพื่อใช้ในครัวเรือน|
-|17	|กิจกรรมขององค์การระหว่างประเทศ|
-|18	|กิจกรรมการบริหารและการบริการสนับสนุน บริการด้านอื่นๆ|
+| A| Agricultural and fishery |
+|C|Mining|
+|D|Manufacturing|
+|E|Electricity|
+|F|Construction and real estate|
+|G|Retail|
+|H|Hotel & restaurant|
+|I|Transportation|
+|J|Finance|
+|L|Public & international organization|
+|M|Education|
+|N|Healthcare|
+|O|Social service|
+|P|Domestic|
 
 For details see **LFS_concordance.xlsx**\
 Source:\
 [Description](http://statstd.nso.go.th/classification/search.aspx?class=1&act=change) of every industry code\
-[Original concordance table](http://statstd.nso.go.th/classification/correspondencedetail.aspx?id=10) between ISIC Rev.3.0 and TSIC 2009
 
 ## FILES
 - LFS_cleanscript.R : add year and quarter column, remove space in .sav file names
