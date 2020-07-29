@@ -11,6 +11,7 @@
 
 library(dplyr)
 library(haven)
+#library(readxl)
 
 rm(list = ls(all.names = TRUE))
 setwd("C:\\Users\\81804\\Desktop\\Data\\LFS")
@@ -150,16 +151,120 @@ for (i in 3: length(file)){
   rm(newdata, output, outputname, msg1, msg2, i, year)
 }
 
+# create household id ======================================
+
+data <- read.csv("LFS_2003_ana.csv")
+
+hhid.pq <- list()
+for (q in 1:4) {
+  prov <- data[data$quarter==q,]$CWT %>%
+    unique() 
+  
+  hhid.p <- list()
+  for (p in 1:length(prov)) {
+    data.pq <- data[data$quarter==q & data$CWT == prov[p],]
+    n <-  nrow(data.pq)
+    hhno <- data.pq$HH_NO
+    hhid <- rep(NA,n)
+    hhid[1] <- 10^8*q +10^6*prov[p] + 1
+    
+    for (i in 2:n) {
+      if (hhno[i]==hhno[i-1]) {
+        hhid[i] <- hhid[i-1]
+      } else {
+        hhid[i] <- hhid[i-1]+1
+      }
+    }
+    
+   hhid.p[[p]] <- hhid  
+  }
+  
+  hhid.pq[[q]] <- unlist(hhid.p)
+}
+data$hhid <- unlist(hhid.pq)
+
+
+# recode industry ==========================================
+concordance <- read.csv("TSIC_to_ISIC_edited.csv") %>%
+  select(-c(oneDigit))
+
+ISIC_match <- concordance %>%
+  select(c(ISIC, bigGroup)) %>%
+  na.omit() %>%
+  distinct() %>%
+  rename(indus.original = ISIC) %>%
+  mutate(indus.original = as.numeric(indus.original)) #296 unique correspondence
+
+LFS11_match <- concordance %>%
+  select(c(LFS11, bigGroup))  %>%
+  na.omit() %>%
+  distinct() %>%
+  rename(indus.original = LFS11) %>%
+  mutate(indus.original = as.numeric(indus.original)) #441 unique correspondence
+
+TSIC_match <- concordance %>%
+  select(c(TSIC, bigGroup))  %>%
+  na.omit() %>%
+  distinct() %>%
+  rename(indus.original = TSIC) %>%
+  mutate(indus.original = as.numeric(indus.original))
+
+# check if there is one to many match
+
+ISIC_match$dup <- duplicated(ISIC_match$indus.original)
+LFS11_match$dup <- duplicated(LFS11_match$indus.original)
+TSIC_match$dup <- duplicated(TSIC_match$indus.original)
+
+ISICerror <- ISIC_match[ISIC_match$dup == TRUE,] #0 errors
+LFS11error <- LFS11_match[LFS11_match$dup == TRUE,] #0 errors
+TSICerror <- TSIC_match[TSIC_match$dup == TRUE,] #0 errors
+
+matchList <- list(ISIC_match, LFS11_match, TSIC_match)
+
+# recode industry variable
+for (year in 2003:2018) {
+  input <- paste0("LFS_", year, "_ana.csv")
+  data <- read.csv(input, header = TRUE)
+  
+  m <- ifelse(year <= 2010, 1,
+              ifelse(year == 2011, 2, 3))
+  
+  data_indusRecode <- merge(data, matchList[[m]],
+                            by.x = "INDUS", by.y = "indus.original",
+                            all.x = TRUE, all.y = FALSE)
+  if (nrow(data) == nrow(data_indusRecode)) {
+    outputname <- paste0("LFS_",year, "_indusRecode.csv")
+    write.csv(data_indusRecode, file = outputname)
+    msg <- paste0("output year ", year)
+    print(msg)
+  } else {
+    msg <- paste0("error for year ", year)
+    print(msg)
+  }
+  
+  if (year == 2018) {
+    rm(input, data, data_indusRecode, outputname, msg)
+  }
+}
+
 # ==============================================================================
 
-file_ana <- list.files(pattern = "_ana.csv",
-                      full.names = TRUE)
+file_recode <- list.files(pattern = "_indusRecode.csv",
+                         full.names = TRUE)
 
 # This line may take some time to run
-allLFS_ana <- lapply(file_ana[3:18], read.csv, row.names=1)
-LFS_all_ana <- bind_rows(allLFS_ana)
+LFS_all <- lapply(file_recode, read.csv, row.names=1) %>%
+  bind_rows() %>%
+  rename(industry = bigGroup) %>%
+  select(-c(dup))
 
-write_dta(LFS_all_ana, 
+# Find pattern in industry data that could not be matched
+errorData <- LFS_all[which(is.na(LFS_all$industry) == TRUE & 
+                             is.na(LFS_all$INDUS) == FALSE), ]
+
+table(errorData$INDUS)
+# 1599  3999  5299  9999 47799 99999 
+# 1     2    82  2840     1  2273 
+
+write_dta(LFS_all, 
           path = "./LFS_all.dta")
-
-rm(allLFS_ana, file_ana)

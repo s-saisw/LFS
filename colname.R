@@ -10,9 +10,42 @@ setwd("/Data/LFS")
 
 library(tidyverse)
 
-# get base column from the 1st quarter
-fileq1= list.files("/Data/LFS/rawcsv", 
-                 pattern = "_Q1.csv", full.names = TRUE)
+# =====================================================================================
+
+for (i in 1998:2018){
+  pat = paste0("LFS_", i, "_Q[1234].csv")
+  filelist = list.files("/Data/LFS/rawcsv", pattern = pat)
+  collist = list()
+  for (j in 1:length(filelist)) {
+    data = read.csv(filelist[j], row.names = 1)
+    collist[[j]] = colnames(data)
+  }
+  for (k in 2:4){
+    detail = setdiff(union(collist[1],collist[k]), 
+                     intersect(collist[1],collist[k])
+                     )
+    x = length(detail)
+    if(x == 0){
+      msg = paste0("No need to change for year", i, "quarter", k)
+      print(msg)
+    }
+    else {
+      msg = paste0("Warning for year", i, "quarter", k, "as follows")
+      print(msg)
+      print(detail)
+    }
+  }
+  }
+
+# =====================================================================================
+
+for (i in 1:n) {
+  data = read.csv(fileq1[i], row.names = 1)
+  allcol[[i]] = colnames(data)
+  message = paste0("Got colname of data no.", i)
+  print(message)
+  rm(data, message, i)
+}
 
 allcol = list()
 
@@ -24,8 +57,6 @@ for (i in 1:length(fileq1)) {
   print(message)
   rm(data, message, i)
 }
-
-# write a function to check which year to change
 
 # Change for every year
 for (i in 1998:2018){
@@ -74,7 +105,3 @@ for (i in 1998:2018){
   print(msg2)
   rm(pat, filelist, temp, yearlyLFS, outputname, msg, msg2, i)
 }
-
-
-
-

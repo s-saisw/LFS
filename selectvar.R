@@ -9,7 +9,7 @@
 # ==============================================================================
 
 rm(list = ls(all.names = TRUE))
-setwd("/Data/LFS")1
+setwd("/Data/LFS")
 
 library(dplyr)
 

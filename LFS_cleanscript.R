@@ -11,8 +11,10 @@
 library(foreign)
 library(haven)
 
+setwd("C:/Users/81804/Desktop/Data/LFS")
+
 LFSclean = function(year, quarter){
-mainfolder = paste0("/Data/LFS/rawsav/Q", quarter)
+mainfolder = paste0("rawsav/Q", quarter)
 filepath = paste0(mainfolder, "/LFS Q",quarter," ",year, ".sav")
 LFSdata = read.spss(filepath, to.data.frame = TRUE)
 LFSdata$year = year -543
@@ -22,9 +24,9 @@ write.csv(LFSdata, file= output_name)
 }
 
 #------------------------------------------------------------------------------
-filesQ1 = list.files("/Data/LFS/rawsav/Q1", ".sav", full.names = FALSE)
-yearvecQ1 = as.numeric(substr(filesQ1, 8, 11))
-quartervecQ1 = as.numeric(substr(filesQ1, 6, 6))
+filesQ1 <- list.files("rawsav/Q1", ".sav", full.names = TRUE)
+yearvecQ1 = as.numeric(substr(filesQ1, 18, 21))
+quartervecQ1 = as.numeric(substr(filesQ1, 16, 16))
 
 mapply(LFSclean, yearvecQ1, quartervecQ1)
 
