@@ -11,7 +11,6 @@
 
 library(dplyr)
 library(haven)
-#library(readxl)
 
 rm(list = ls(all.names = TRUE))
 setwd("C:\\Users\\81804\\Desktop\\Data\\LFS")
@@ -153,36 +152,61 @@ for (i in 3: length(file)){
 
 # create household id ======================================
 
-data <- read.csv("LFS_2003_ana.csv")
+for (y in 4:18) {
+  data <- read.csv(file_addhhid[y])
+  unique(data$MONTH) %>% print()
+}
 
-hhid.pq <- list()
-for (q in 1:4) {
-  prov <- data[data$quarter==q,]$CWT %>%
-    unique() 
+
+file_addhhid <- list.files(pattern = "_ana.csv",
+                          full.names = TRUE)
+
+for (f in 4:18) {
+  data <- read.csv(file_addhhid[f])
+  month <- unique(data$MONTH)
   
-  hhid.p <- list()
-  for (p in 1:length(prov)) {
-    data.pq <- data[data$quarter==q & data$CWT == prov[p],]
-    n <-  nrow(data.pq)
-    hhno <- data.pq$HH_NO
-    hhid <- rep(NA,n)
-    hhid[1] <- 10^8*q +10^6*prov[p] + 1
+  for (q in 1:length(month)) {
+    prov <- data[data$MONTH==month[q],]$CWT %>%
+      unique() 
     
-    for (i in 2:n) {
-      if (hhno[i]==hhno[i-1]) {
-        hhid[i] <- hhid[i-1]
-      } else {
-        hhid[i] <- hhid[i-1]+1
+    for (p in 1:length(prov)) {
+      data.pq <- data[data$MONTH==month[q] & data$CWT == prov[p],]
+      n <-  nrow(data.pq)
+      hhno <- data.pq$HH_NO
+      hhid <- rep(NA,n)
+      hhid[1] <- 1
+      
+      for (i in 2:n) {
+        if (hhno[i]==hhno[i-1]) {
+          hhid[i] <- hhid[i-1]
+        } else {
+          hhid[i] <- hhid[i-1]+1
+        }
+      }
+      
+      data.pq$hhid <- hhid
+      
+      if (p == 1) {
+        pdata <- data.pq
+      } else if (p>1){
+        pdata <- rbind.data.frame(pdata, data.pq) #rbind all provinces
       }
     }
     
-   hhid.p[[p]] <- hhid  
+    if (q==1) {
+      ydata <- pdata
+    } else if (q>1){
+      ydata <- rbind.data.frame(ydata, pdata)
+    }
   }
   
-  hhid.pq[[q]] <- unlist(hhid.p)
+  year <- 2000+f
+  outputname <- paste0("LFS_",year,"_hhid.csv")
+  write.csv(ydata, file = outputname)
+  
+  msg <- paste("Output data of year", year)
+  print(msg)
 }
-data$hhid <- unlist(hhid.pq)
-
 
 # recode industry ==========================================
 concordance <- read.csv("TSIC_to_ISIC_edited.csv") %>%
@@ -222,8 +246,8 @@ TSICerror <- TSIC_match[TSIC_match$dup == TRUE,] #0 errors
 matchList <- list(ISIC_match, LFS11_match, TSIC_match)
 
 # recode industry variable
-for (year in 2003:2018) {
-  input <- paste0("LFS_", year, "_ana.csv")
+for (year in 2004:2018) {
+  input <- paste0("LFS_", year, "_hhid.csv")
   data <- read.csv(input, header = TRUE)
   
   m <- ifelse(year <= 2010, 1,
@@ -256,7 +280,7 @@ file_recode <- list.files(pattern = "_indusRecode.csv",
 LFS_all <- lapply(file_recode, read.csv, row.names=1) %>%
   bind_rows() %>%
   rename(industry = bigGroup) %>%
-  select(-c(dup))
+  select(-c(dup, X.1))
 
 # Find pattern in industry data that could not be matched
 errorData <- LFS_all[which(is.na(LFS_all$industry) == TRUE & 
@@ -264,7 +288,7 @@ errorData <- LFS_all[which(is.na(LFS_all$industry) == TRUE &
 
 table(errorData$INDUS)
 # 1599  3999  5299  9999 47799 99999 
-# 1     2    82  2840     1  2273 
+# 1     2    82  2699     1  2273 
 
 write_dta(LFS_all, 
           path = "./LFS_all.dta")
