@@ -5,7 +5,6 @@ codes for cleaning Labor Force Survey
 - Rename .sav files and convert to .csv (Original file names contain space) **LFS_cleanscript.R**
 - Rename columns to make it consistent within a year (Column names are mostly consistent within a year) **colname.R**
 - Merge quarterly data to year data **colname.R**
-- Filter individuals under 15 out (To reduce RAM's load) **filterage.R**
 - Delete variables that NSO mistakenly supplied (To reduce RAM's load) **selectvar.R**
 - Make column names consistent across years **LFS_outputdta.R**
 - Select only necessary variables (To reduce the workload of stata) **LFS_outputdta.R**

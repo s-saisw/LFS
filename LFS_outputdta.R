@@ -1,24 +1,36 @@
 #=================================================================================
 # This program selects only necessary variables for stata and renames for merge
-# last update - 7/28/2020
+# last update - 3/3/2021
 # input       - _selected.csv annual data 2001-2018
 # output      - _ana.csv annual data 2001-2018
-# WORKFLOW    - get column names and store in a list
+# WORKFLOW    - change column name of LFS to uppercase
+#             - get column names and store in a list
 #             - write a function to check which column to rename
 #             - rename (manually) and select only necessary variables
 #             - merge and output as a single .dta file
 #=================================================================================
 
-library(dplyr)
+library(tidyverse)
 library(haven)
 
 rm(list = ls(all.names = TRUE))
 setwd("C:\\Users\\81804\\Desktop\\Data\\LFS")
 
+# change column names of year 2013 to uppercase 
+# overwrite LFS_2012_selected
+
+LFS_2013 <- read.csv("LFS_2013_selected.csv", 
+                    row.names=1)
+
+colnames(LFS_2013) <- toupper(colnames(LFS_2013))
+
+write.csv(LFS_2013, file = "LFS_2013_selected.csv")
+rm(LFS_2013) #reduce RAM load
+
 # =============================================================================
 
 file <- list.files(path = getwd(),
-                   "_selected.csv",
+                   "LFS_[12][09][019][0123456789]_selected",
                   full.names = TRUE) #This is LFS by year
 
 collist <- list()
@@ -32,8 +44,6 @@ for (i in 1:length(file)) {
 }
 
 save(collist, file = "collist.Rdata")
-
-# drop 2001-2002 because there is no HH no
 
 # =============================================================================
 
@@ -56,6 +66,8 @@ varneed = list("year", "quarter", "CWT", "MONTH",
                "RE_WK",
                "MAIN_HR", "OTHER_HR", "TOTAL_HR",
                "BONUS", "OT", "OTH_MONEY")
+
+# drop 2001-2002 because there is no HH no
 
 for (i in 1: length(varneed)) {
   checkvar(varneed[[i]])
@@ -93,13 +105,14 @@ for (i in 1: length(varneed)) {
 
 # =============================================================================
 
-for (i in 3: length(file)){
+for (i in 13: length(file)){
   data <- read.csv(file[i], row.names = 1)
-  if(i %in% 1:2){
-    newdata = rename(data,
-                     CWT = CWD,
-                     AMOUNT = AMOUMT)
-  }  else if (i == 3) {
+  # if(i %in% 1:2){
+  #   newdata = rename(data,
+  #                    CWT = CWD,
+  #                    AMOUNT = AMOUMT)
+  # }  
+  if (i == 3) {
     newdata = rename(data,
                      CWT = CWD,
                      AMOUNT = AMOUMT)
@@ -115,13 +128,21 @@ for (i in 3: length(file)){
                      MEMBERS = MEMBERS_)
   } else if (i==13){
     newdata = rename(data,
-                     STATUS = status,
-                     INDUS = indus,
-                     SIZE_ = size,
-                     MAIN_HR = main_hr,
-                     OTHER_HR = other_hr,
-                     TOTAL_HR = total_hr,
-                     MEMBERS = MEMBERS_)
+                     year = YEAR,
+                     quarter = QUARTER,
+                     MONTH = MOUNTH,
+                     MEMBERS = MEMBER,
+                     SIZE_ = SIZE,
+                     WAGE_TYPE = WAGE_TY,
+                     OTH_MONEY = OTH_MON)
+                     # OTH_MON = OTH_MONEY
+                     # STATUS = status,
+                     # INDUS = indus,
+                     # SIZE_ = size,
+                     # MAIN_HR = main_hr,
+                     # OTHER_HR = other_hr,
+                     # TOTAL_HR = total_hr,
+                     # MEMBERS = MEMBERS_)
   } else if (i %in% 14:18){
     newdata = rename(data,
                      MEMBERS = MEMBERS_)
@@ -152,10 +173,10 @@ for (i in 3: length(file)){
 
 # create household id ======================================
 
-for (y in 4:18) {
-  data <- read.csv(file_addhhid[y])
-  unique(data$MONTH) %>% print()
-}
+# for (y in 4:18) {
+#   data <- read.csv(file_addhhid[y])
+#   unique(data$MONTH) %>% print()
+# }
 
 
 file_addhhid <- list.files(pattern = "_ana.csv",
@@ -280,7 +301,7 @@ file_recode <- list.files(pattern = "_indusRecode.csv",
 LFS_all <- lapply(file_recode, read.csv, row.names=1) %>%
   bind_rows() %>%
   rename(industry = bigGroup) %>%
-  select(-c(dup, X.1))
+  select(-c(dup, X.1)) #13190372
 
 # Find pattern in industry data that could not be matched
 errorData <- LFS_all[which(is.na(LFS_all$industry) == TRUE & 
@@ -291,4 +312,4 @@ table(errorData$INDUS)
 # 1     2    82  2699     1  2273 
 
 write_dta(LFS_all, 
-          path = "./LFS_all.dta")
+          path = "./LFS_all_noagefilter.dta")

@@ -1,24 +1,26 @@
 # ==============================================================================
 # This program adds year and quarter to existing tables, output as csv
-# details     - remove space in .sav file names
-#             - write two new functions for Q and R
-#             - process by quarter to reduce RAM's load
-# input       - raw .sav files
-# output      - raw .csv files
-# Last update - 8/14/2019
+# details     - Delete variables that NSO mistakenly supplied 
+#               (To reduce RAM's load)
+# input       - LFS_20XX.csv
+# output      - LFS_20XX_selected.csv
+# Last update - 3/3/2021
 # ==============================================================================
 
 rm(list = ls(all.names = TRUE))
-setwd("/Data/LFS")
+setwd("C:\\Users\\81804\\Desktop\\Data\\LFS")
 
-library(dplyr)
+library(tidyverse)
 
 # ==============================================================================
 
-datalist = list.files(path = "/Data/LFS/",
-                      pattern = "above15.csv",
-                      full.names = TRUE
-                      )
+datalist <- list.files(pattern = "LFS_[12][09][019][0123456789].csv",
+                 full.names = TRUE)[-c(1:8)]
+
+# datalist = list.files(path = "/Data/LFS/",
+#                       pattern = "above15.csv",
+#                       full.names = TRUE
+#                       )
 
 allcol = list()
 
@@ -31,6 +33,7 @@ for (i in 1:length(datalist)) {
   rm(data, message)
 }
 
+# Delete all variables after "quarter", the new variable I added
 # For year 2003, MONTH is missing for only the first quarter.
 # Therefore, we delete everything after MONTH instead
 # Order of variables matters too much. Can be improved!
@@ -47,7 +50,7 @@ for (i in 1:length(datalist)) {
   }
   newdata = select(data, c(1:x))
   year = newdata$year[1]
-  outputname = paste0("LFS_", year, "_above15_selected.csv")
+  outputname = paste0("LFS_", year, "_selected.csv")
   write.csv(newdata, file = outputname)
   message = paste0("Successfully output data no.", i)
   print(message)
